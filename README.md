@@ -16,6 +16,9 @@ detectors/
 ```
 
 ---
+## 환경
+
+Raspberry PI 의 env 가상환경 그대로 사용
 
 ## 실행
 
