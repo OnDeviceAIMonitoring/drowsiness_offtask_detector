@@ -3,7 +3,6 @@ FidgetDetector — fidget_detector.py 알고리즘을 클래스로 래핑
 상반신 키포인트 이동량 → burst 반복 → LOW_FOCUS 시그널
 """
 import cv2
-import mediapipe as mp
 import numpy as np
 import time
 from collections import deque
@@ -37,12 +36,6 @@ class FidgetDetector(BaseDetector):
         return "fidget"
 
     def __init__(self):
-        self.pose = mp.solutions.pose.Pose(
-            model_complexity=0,
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5,
-        )
-
         self.prev_pts = None
 
         # 캘리브레이션
@@ -65,18 +58,17 @@ class FidgetDetector(BaseDetector):
         self._burst_count = 0
 
     # ── process_frame ───────────────────────────────────
-    def process_frame(self, frame, now: float, rgb=None) -> list[Signal]:
+    def process_frame(self, frame, now: float, shared=None) -> list[Signal]:
         signals: list[Signal] = []
         h, w = frame.shape[:2]
-        if rgb is None:
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        result = self.pose.process(rgb)
+
+        pose_landmarks = shared.pose_landmarks if shared else None
 
         energy = 0.0
         curr_pts = None
 
-        if result.pose_landmarks:
-            lm = result.pose_landmarks.landmark
+        if pose_landmarks:
+            lm = pose_landmarks.landmark
             curr_pts = np.array(
                 [[lm[i].x * w, lm[i].y * h] for i in _TRACK_IDS],
                 dtype=np.float32,
@@ -165,4 +157,4 @@ class FidgetDetector(BaseDetector):
 
     # ── 정리 ──────────────────────────────────────────────
     def release(self):
-        self.pose.close()
+        pass

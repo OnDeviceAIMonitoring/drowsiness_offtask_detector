@@ -8,7 +8,7 @@ Signal Hub — 여러 감지기(Detector)를 통합 실행하는 오케스트레
 import cv2
 import time
 
-from detectors import DrowsinessDetector, FidgetDetector, HeartDetector, Signal
+from detectors import DrowsinessDetector, FidgetDetector, OffTaskDetector, HeartDetector, Signal, SharedMediaPipe
 
 # ─────────────────────────────────────────────────────────────
 #  감지기 등록 — 새 Detector를 여기에 추가하면 자동으로 동작합니다
@@ -17,8 +17,10 @@ DETECTORS = [
     DrowsinessDetector(),
     FidgetDetector(),
     HeartDetector(),
-    # ObjectDetector(),   # ← 향후 객체 탐지 추가 예시
+    OffTaskDetector(),
 ]
+
+shared_mp = SharedMediaPipe()
 
 # ─────────────────────────────────────────────────────────────
 #  시그널 콜백 — 수신된 시그널을 처리하는 함수
@@ -44,8 +46,7 @@ SIGNAL_STYLES = {
     "DROWSINESS": {"color": (0, 0, 200),    "label": "DROWSINESS"},  # 빨강
     "LOW_FOCUS":  {"color": (0, 100, 220),  "label": "LOW_FOCUS"},   # 주황
     "HEART":      {"color": (180, 0, 180),  "label": "BIG HEART!"},  # 보라
-    # 새 시그널 추가 시 여기에 등록
-    # "OBJECT_DETECTED": {"color": (200, 120, 0), "label": "객체 감지"},
+    "OFF_TASK":   {"color": (252, 180, 14),  "label": "OFF_TASK"},    # 파랑
 }
 _DEFAULT_STYLE = {"color": (180, 180, 0), "label": "alarm"}            # 미등록 시그널 기본
 
@@ -101,11 +102,12 @@ def main():
 
             # ── BGR→RGB 변환 1회 (모든 감지기 공유) ──────────
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            shared_mp.process(rgb)
 
             # ── 모든 감지기 실행 ──────────────────────────────
             all_signals: list[Signal] = []
             for det in DETECTORS:
-                sigs = det.process_frame(frame, now, rgb)
+                sigs = det.process_frame(frame, now, shared_mp)
                 all_signals.extend(sigs)
 
             # ── 시그널 콜백 ───────────────────────────────────
@@ -128,6 +130,7 @@ def main():
     finally:
         cap.release()
         cv2.destroyAllWindows()
+        shared_mp.release()
         for det in DETECTORS:
             det.release()
 
