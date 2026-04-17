@@ -65,10 +65,11 @@ class FidgetDetector(BaseDetector):
         self._burst_count = 0
 
     # ── process_frame ───────────────────────────────────
-    def process_frame(self, frame, now: float) -> list[Signal]:
+    def process_frame(self, frame, now: float, rgb=None) -> list[Signal]:
         signals: list[Signal] = []
         h, w = frame.shape[:2]
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if rgb is None:
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         result = self.pose.process(rgb)
 
         energy = 0.0
