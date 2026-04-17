@@ -115,10 +115,11 @@ class DrowsinessDetector(BaseDetector):
         return self.ear_thresh_down + t * (self.ear_thresh_up - self.ear_thresh_down)
 
     # ── process_frame ───────────────────────────────────
-    def process_frame(self, frame, now: float) -> list[Signal]:
+    def process_frame(self, frame, now: float, rgb=None) -> list[Signal]:
         signals: list[Signal] = []
         h, w = frame.shape[:2]
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if rgb is None:
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         face_result = self.face_mesh.process(rgb)
         pose_result = self.pose.process(rgb)
